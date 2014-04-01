@@ -16,17 +16,9 @@ var (
 	backoff = flag.Duration("backoff", 100*time.Millisecond, "")
 	buffer  = flag.Int("buffer", 65536, "")
 	tcp     = flag.String("tcp", ":9639", "")
-
-	hostname = ""
 )
 
 func init() {
-	var err error
-	hostname, err = os.Hostname()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	flag.Parse()
 
 	if os.Getenv("GOMAXPROCS") == "" {
