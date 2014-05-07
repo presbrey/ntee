@@ -16,6 +16,7 @@ var (
 	backoff = flag.Duration("backoff", 100*time.Millisecond, "")
 	buffer  = flag.Int("buffer", 65536, "")
 	tcp     = flag.String("tcp", ":9639", "")
+	timeout = flag.Duration("timeout", 5*time.Second, "")
 )
 
 func init() {
@@ -44,13 +45,13 @@ func startTCP(ch chan<- net.Conn) error {
 	return nil
 }
 
-func main() {
+func tee(outs []string) {
 	var (
 		conns   = make(chan net.Conn, 128)
 		lines   = make(chan string, *backlog)
 		outputs = map[string]chan string{}
 	)
-	for _, v := range flag.Args() {
+	for _, v := range outs {
 		outputs[v] = make(chan string, *backlog)
 		go func(addr string, ch chan string) {
 			var (
@@ -62,7 +63,7 @@ func main() {
 				select {
 				case line := <-ch:
 					if sink == nil {
-						if sink, err = net.Dial("tcp", addr); err != nil {
+						if sink, err = net.DialTimeout("tcp", addr, *timeout); err != nil {
 							sink = nil
 							log.Println(err)
 							time.Sleep(*backoff)
@@ -119,4 +120,8 @@ func main() {
 
 		} // select
 	} // for
+}
+
+func main() {
+	tee(flag.Args())
 }
